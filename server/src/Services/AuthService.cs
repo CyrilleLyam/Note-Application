@@ -6,6 +6,8 @@ using MapsterMapper;
 using Microsoft.IdentityModel.Tokens;
 using server.src.Config;
 using server.src.Dtos;
+using server.src.Events;
+using server.src.Events.Interfaces;
 using server.src.Models;
 using server.src.Repositories.Interfaces;
 using server.src.Services.Interfaces;
@@ -18,17 +20,23 @@ public class AuthService : IAuthService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IMapper _mapper;
+    private readonly IEventPublisher _eventPublisher;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
-        IMapper mapper)
+        IMapper mapper,
+        IEventPublisher eventPublisher,
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
         _mapper = mapper;
+        _eventPublisher = eventPublisher;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> Register(RegisterDto registerDto, CancellationToken cancellationToken)
@@ -44,6 +52,12 @@ public class AuthService : IAuthService
         user.Password = _passwordHasher.Hash(registerDto.Password);
 
         var createdUser = await _userRepository.Create(user, cancellationToken);
+
+        _logger.LogInformation("User registered successfully with ID {UserId}, emitting UserRegisteredEvent", createdUser.Id);
+        await _eventPublisher.PublishAsync(
+            new UserRegisteredEvent(createdUser.Id, createdUser.Username, createdUser.Email),
+            cancellationToken);
+
         return await GenerateAuthResponse(createdUser, cancellationToken);
     }
 
