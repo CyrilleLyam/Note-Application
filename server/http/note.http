@@ -1,0 +1,51 @@
+@server_HostAddress = http://localhost:5142
+@token = YOUR_ACCESS_TOKEN_HERE
+
+GET {{server_HostAddress}}/api/notes?page=1&page_size=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+GET {{server_HostAddress}}/api/notes?search=meeting&created_from=2026-09-01T00:00:00Z&sort_by=title&sort_order=asc&page=1&page_size=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+GET {{server_HostAddress}}/api/notes/1
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+POST {{server_HostAddress}}/api/notes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Weekly meeting",
+  "content": "Discuss roadmap and assign owners."
+}
+
+###
+
+PUT {{server_HostAddress}}/api/notes/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Weekly meeting (Updated)",
+  "content": "Discuss roadmap, assign owners, and review blockers.",
+  "row_version": "ROW_VERSION_FROM_GET_RESPONSE"
+}
+
+###
+
+DELETE {{server_HostAddress}}/api/notes/1
+Authorization: Bearer {{token}}
+
+###
+
+GET {{server_HostAddress}}/health
+X-Correlation-ID: manual-check-001
