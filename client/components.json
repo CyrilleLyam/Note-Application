@@ -5,7 +5,7 @@
   "typescript": true,
   "tailwind": {
     "config": "",
-    "css": "src/style.css",
+    "css": "src/assets/styles/main.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
@@ -14,11 +14,11 @@
   "rtl": false,
   "pointer": false,
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "composables": "@/composables"
+    "components": "@/core/components",
+    "utils": "@/core/utils/utils",
+    "ui": "@/core/components/ui",
+    "lib": "@/core",
+    "composables": "@/core/composables"
   },
   "registries": {}
 }

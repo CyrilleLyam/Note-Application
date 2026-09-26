@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),
+        '@core': path.resolve(import.meta.dirname, './src/core'),
+        '@modules': path.resolve(import.meta.dirname, './src/modules'),
       },
     },
     server: {

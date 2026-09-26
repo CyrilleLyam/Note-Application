@@ -1,16 +1,12 @@
-import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { createApp } from 'vue'
-import { i18n } from '@/i18n'
-import AppLayout from '@/layouts/AppLayout.vue'
-import router from '@/router/index'
-import { useSettingsStore } from '@/stores/settings'
+import { useSettingsStore } from '@/core/store'
+import AppLayout from '@/core/views/AppLayout.vue'
+import { i18n } from '@/plugins/i18n'
+import router from '@/router'
+import { pinia } from '@/store'
 import App from './App.vue'
 import 'vue-sonner/style.css'
-import './style.css'
-
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
+import '@/assets/styles/main.css'
 
 const app = createApp(App)
 app.component('AppLayout', AppLayout)
