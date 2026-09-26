@@ -1,26 +1,29 @@
 import { createI18n } from 'vue-i18n'
 import en from './locales/en'
 import km from './locales/km'
+import zh from './locales/zh'
 
-export const SUPPORTED_LOCALES = ['en', 'km'] as const
+export const SUPPORTED_LOCALES = ['en', 'km', 'zh'] as const
 
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number]
 
 export const LOCALE_LABELS: Record<AppLocale, string> = {
   en: 'English',
   km: 'ខ្មែរ',
+  zh: '中文',
 }
 
 const INTL_LOCALES: Record<AppLocale, string> = {
   en: 'en-US',
   km: 'km-KH',
+  zh: 'zh-CN',
 }
 
 export const i18n = createI18n({
   legacy: false,
   locale: 'en',
   fallbackLocale: 'en',
-  messages: { en, km },
+  messages: { en, km, zh },
 })
 
 export function isSupportedLocale(value: unknown): value is AppLocale {
