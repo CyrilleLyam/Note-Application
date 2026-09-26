@@ -1,12 +1,12 @@
 @server_HostAddress = http://localhost:5142
-@token = YOUR_ACCESS_TOKEN_HERE
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiamFuZV9kb2UiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJkZXZvbHV0aW9uYXJ5LndpemFyZEBnbWFpbC5jb20iLCJleHAiOjE3OTA0MzU4OTIsImlzcyI6Ik5vdGVBcHAiLCJhdWQiOiJOb3RlQXBwVXNlcnMifQ.LrgqoFrTrgzO0xU_NNE-q8nk8yyyRz487G7AKwe-jNo
 
 POST {{server_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
   "username": "jane_doe",
-  "email": "jane@notes.io",
+  "email": "devolutionary.wizard@gmail.com",
   "password": "V9#kL2$mP7!xQ8@wZ4"
 }
 
@@ -16,7 +16,7 @@ POST {{server_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "jane@notes.io",
+  "email": "devolutionary.wizard@gmail.com",
   "password": "V9#kL2$mP7!xQ8@wZ4"
 }
 
@@ -32,7 +32,7 @@ POST {{server_HostAddress}}/api/auth/refresh
 Content-Type: application/json
 
 {
-  "refresh_token": "YOUR_REFRESH_TOKEN_HERE"
+  "refresh_token": "HBFu0nPrlt3okbJ/lmEO4w/jx1X8H6qTC87D8nc5hobLuWT9bDKlWlamRMAgCLQU0Lo5SiamVw5g3kS+BhmUHQ=="
 }
 
 ###

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using MapsterMapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using server.src.Config;
 using server.src.Dtos;
@@ -43,15 +44,39 @@ public class AuthService : IAuthService
     {
         var user = _mapper.Map<User>(registerDto);
 
-        var existingUser = await _userRepository.GetByEmail(user.Email, cancellationToken);
-        if (existingUser != null)
+        var existingUserByEmail = await _userRepository.GetByEmail(user.Email, cancellationToken);
+        if (existingUserByEmail != null)
         {
             throw new InvalidOperationException("Email is already registered.");
         }
 
+        var existingUserByUsername = await _userRepository.GetByUsername(user.Username, cancellationToken);
+        if (existingUserByUsername != null)
+        {
+            throw new InvalidOperationException("Username is already taken.");
+        }
+
         user.Password = _passwordHasher.Hash(registerDto.Password);
 
-        var createdUser = await _userRepository.Create(user, cancellationToken);
+        User createdUser;
+        try
+        {
+            createdUser = await _userRepository.Create(user, cancellationToken);
+        }
+        catch (SqlException ex) when (ex.Number is 2601 or 2627)
+        {
+            if (ex.Message.Contains("ix_users_username", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Username is already taken.");
+            }
+
+            if (ex.Message.Contains("ix_users_email", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Email is already registered.");
+            }
+
+            throw;
+        }
 
         _logger.LogInformation("User registered successfully with ID {UserId}, emitting UserRegisteredEvent", createdUser.Id);
         await _eventPublisher.PublishAsync(

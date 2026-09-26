@@ -40,6 +40,19 @@ public class UserRepository : IUserRepository
             new CommandDefinition(sql, new { Email = email }, cancellationToken: cancellationToken));
     }
 
+    public async Task<User?> GetByUsername(string username, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT id, username, email, password, created_at, updated_at
+            FROM users
+            WHERE username = @Username
+            """;
+
+        await using var connection = _connectionFactory.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<User>(
+            new CommandDefinition(sql, new { Username = username }, cancellationToken: cancellationToken));
+    }
+
     public async Task<User> Create(User user, CancellationToken cancellationToken)
     {
         const string sql = """
