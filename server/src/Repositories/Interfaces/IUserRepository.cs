@@ -8,4 +8,5 @@ public interface IUserRepository
     Task<User?> GetByEmail(string email, CancellationToken cancellationToken);
     Task<User?> GetByUsername(string username, CancellationToken cancellationToken);
     Task<User> Create(User user, CancellationToken cancellationToken);
+    Task<User> Update(User user, CancellationToken cancellationToken);
 }

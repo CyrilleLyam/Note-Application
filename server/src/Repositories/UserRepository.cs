@@ -17,7 +17,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetById(int id, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, username, email, password, created_at, updated_at
+            SELECT id, username, email, password, avatar_url, display_name, bio, created_at, updated_at
             FROM users
             WHERE id = @Id
             """;
@@ -30,7 +30,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmail(string email, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, username, email, password, created_at, updated_at
+            SELECT id, username, email, password, avatar_url, display_name, bio, created_at, updated_at
             FROM users
             WHERE email = @Email
             """;
@@ -43,7 +43,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByUsername(string username, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, username, email, password, created_at, updated_at
+            SELECT id, username, email, password, avatar_url, display_name, bio, created_at, updated_at
             FROM users
             WHERE username = @Username
             """;
@@ -56,10 +56,31 @@ public class UserRepository : IUserRepository
     public async Task<User> Create(User user, CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO users (username, email, password)
+            INSERT INTO users (username, email, password, avatar_url, display_name, bio)
             OUTPUT INSERTED.id, INSERTED.username, INSERTED.email,
-                   INSERTED.password, INSERTED.created_at, INSERTED.updated_at
-            VALUES (@Username, @Email, @Password)
+                   INSERTED.password, INSERTED.avatar_url, INSERTED.display_name, INSERTED.bio,
+                   INSERTED.created_at, INSERTED.updated_at
+            VALUES (@Username, @Email, @Password, @AvatarUrl, @DisplayName, @Bio)
+            """;
+
+        await using var connection = _connectionFactory.CreateConnection();
+        return await connection.QuerySingleAsync<User>(
+            new CommandDefinition(sql, user, cancellationToken: cancellationToken));
+    }
+
+    public async Task<User> Update(User user, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE users
+            SET username = @Username,
+                display_name = @DisplayName,
+                bio = @Bio,
+                avatar_url = @AvatarUrl,
+                updated_at = SYSUTCDATETIME()
+            OUTPUT INSERTED.id, INSERTED.username, INSERTED.email,
+                   INSERTED.password, INSERTED.avatar_url, INSERTED.display_name, INSERTED.bio,
+                   INSERTED.created_at, INSERTED.updated_at
+            WHERE id = @Id
             """;
 
         await using var connection = _connectionFactory.CreateConnection();

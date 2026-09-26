@@ -67,12 +67,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function setUser(updatedUser: User) {
+    user.value = updatedUser
+  }
+
   return {
     user,
     isAuthenticated,
     isLoggingOut,
     setSession,
     clearSession,
+    setUser,
     login,
     register,
     fetchCurrentUser,

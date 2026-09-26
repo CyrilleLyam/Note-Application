@@ -62,5 +62,10 @@ public static class EnvValidator
         {
             GetRequired("DB_PASSWORD");
         }
+
+        GetRequired("MINIO_ENDPOINT");
+        GetRequired("MINIO_ACCESS_KEY");
+        GetRequired("MINIO_SECRET_KEY");
+        GetRequired("MINIO_BUCKET_NAME");
     }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { AppLocale } from '@/plugins/i18n'
-import { Languages, LogIn, LogOut, Moon, NotebookPen, Sun, User } from '@lucide/vue'
+import { Languages, LogIn, LogOut, Moon, NotebookPen, Sun, User, UserCog } from '@lucide/vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { Button } from '@/core/components/ui/button'
@@ -19,6 +19,7 @@ import {
 } from '@/core/components/ui/dropdown-menu'
 import { useSettingsStore } from '@/core/store'
 import { useAuthStore } from '@/modules/auth'
+import ProfileDialog from '@/modules/auth/components/ProfileDialog.vue'
 import { isSupportedLocale, LOCALE_LABELS, SUPPORTED_LOCALES } from '@/plugins/i18n'
 
 const { t } = useI18n()
@@ -32,6 +33,7 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 const initials = computed(() => user.value?.username.slice(0, 2).toUpperCase() ?? '')
+const showProfileDialog = ref(false)
 
 onMounted(() => {
   if (isAuthenticated.value && !user.value) {
@@ -94,23 +96,36 @@ async function handleLogout() {
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button variant="ghost" class="h-10 gap-2 rounded-full px-1.5 sm:pr-3" :aria-label="t('nav.accountMenu')">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  <template v-if="initials">{{ initials }}</template>
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary overflow-hidden">
+                  <img
+                    v-if="user?.avatarUrl"
+                    :src="user.avatarUrl"
+                    alt="Avatar"
+                    class="h-full w-full object-cover"
+                  >
+                  <template v-else-if="initials">{{ initials }}</template>
                   <User v-else class="h-4 w-4" />
                 </span>
                 <span class="hidden sm:inline max-w-32 truncate text-sm font-medium">
-                  {{ user?.username }}
+                  {{ user?.displayName || user?.username }}
                 </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-56">
               <DropdownMenuLabel class="flex flex-col gap-0.5">
-                <span class="truncate">{{ user?.username ?? t('nav.myAccount') }}</span>
+                <span class="truncate">{{ user?.displayName || user?.username || t('nav.myAccount') }}</span>
                 <span v-if="user" class="truncate text-xs font-normal text-muted-foreground">
                   {{ user.email }}
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                class="cursor-pointer"
+                @select="showProfileDialog = true"
+              >
+                <UserCog class="h-4 w-4" />
+                <span>Profile Settings</span>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
                 class="cursor-pointer"
@@ -139,4 +154,6 @@ async function handleLogout() {
       </div>
     </div>
   </header>
+
+  <ProfileDialog v-model:open="showProfileDialog" />
 </template>
