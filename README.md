@@ -18,6 +18,12 @@ A full-stack notes app where each user can create, read, update and delete their
 
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2022-CC2927?logo=microsoftsqlserver&logoColor=white)
+![Dapper](https://img.shields.io/badge/Dapper-ORM-512BD4)
+![Mapster](https://img.shields.io/badge/Mapster-Mapper-FF6B35)
 ![MinIO](https://img.shields.io/badge/MinIO-S3-C72E49?logo=minio&logoColor=white)
 ![SMTP](https://img.shields.io/badge/SMTP-Email-0078D4)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?logo=jsonwebtokens&logoColor=white)
+![Argon2](https://img.shields.io/badge/Argon2-Hashing-6DB33F)
+![Serilog](https://img.shields.io/badge/Serilog-Logging-CC0000)
+![Sentry](https://img.shields.io/badge/Sentry-Monitoring-362D59?logo=sentry&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-API_docs-85EA2D?logo=swagger&logoColor=black)
