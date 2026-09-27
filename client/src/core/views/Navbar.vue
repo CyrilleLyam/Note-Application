@@ -20,6 +20,7 @@ import {
 import { useSettingsStore } from '@/core/store'
 import { useAuthStore } from '@/modules/auth'
 import ProfileDialog from '@/modules/auth/components/ProfileDialog.vue'
+import { NotificationBell } from '@/modules/notifications'
 import { isSupportedLocale, LOCALE_LABELS, SUPPORTED_LOCALES } from '@/plugins/i18n'
 
 const { t } = useI18n()
@@ -93,6 +94,7 @@ async function handleLogout() {
         </Button>
 
         <template v-if="isAuthenticated">
+          <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button variant="ghost" class="h-10 gap-2 rounded-full px-1.5 sm:pr-3" :aria-label="t('nav.accountMenu')">

@@ -16,6 +16,7 @@ public class NoteShareService : INoteShareService
     private readonly INoteShareLinkRepository _shareLinkRepository;
     private readonly INoteShareRepository _noteShareRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
 
     public NoteShareService(
@@ -23,12 +24,14 @@ public class NoteShareService : INoteShareService
         INoteShareLinkRepository shareLinkRepository,
         INoteShareRepository noteShareRepository,
         IUserRepository userRepository,
+        INotificationService notificationService,
         IMapper mapper)
     {
         _noteRepository = noteRepository;
         _shareLinkRepository = shareLinkRepository;
         _noteShareRepository = noteShareRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
         _mapper = mapper;
     }
 
@@ -106,7 +109,14 @@ public class NoteShareService : INoteShareService
             throw new InvalidOperationException("You can't share a note with yourself.");
         }
 
+        var isNewShare = await _noteShareRepository.GetPermission(noteId, recipient.Id, cancellationToken) == null;
         var share = await _noteShareRepository.Upsert(noteId, recipient.Id, addNoteShareDto.Permission, cancellationToken);
+
+        if (isNewShare)
+        {
+            await NotifyNoteShared(noteId, ownerId, recipient.Id, share.Permission, cancellationToken);
+        }
+
         return _mapper.Map<NoteShareResponseDto>(share);
     }
 
@@ -119,6 +129,19 @@ public class NoteShareService : INoteShareService
 
         var share = await _noteShareRepository.UpdatePermission(noteId, userId, updateNoteShareDto.Permission, cancellationToken);
         return share == null ? null : _mapper.Map<NoteShareResponseDto>(share);
+    }
+
+    private async Task NotifyNoteShared(int noteId, int ownerId, int recipientId, string permission, CancellationToken cancellationToken)
+    {
+        var note = await _noteRepository.GetById(noteId, ownerId, cancellationToken);
+        var owner = await _userRepository.GetById(ownerId, cancellationToken);
+        if (note == null || owner == null)
+        {
+            return;
+        }
+
+        var actorName = string.IsNullOrWhiteSpace(owner.DisplayName) ? owner.Username : owner.DisplayName;
+        await _notificationService.NotifyNoteShared(recipientId, actorName, noteId, note.Title, permission, cancellationToken);
     }
 
     public async Task<bool> RemoveShare(int noteId, int currentUserId, int userId, CancellationToken cancellationToken)

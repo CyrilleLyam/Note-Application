@@ -235,6 +235,18 @@ const en = {
     createYourOwn: 'Create your own notes',
     backToNotes: 'Back to notes',
   },
+  notifications: {
+    title: 'Notifications',
+    bellLabel: 'Notifications ({count} unread)',
+    markAllRead: 'Mark all as read',
+    empty: 'No notifications yet',
+    emptyDescription: 'When someone shares a note with you, it shows up here.',
+    loadError: 'Unable to load notifications.',
+    noteShared: '{name} shared {title} with you',
+    toastTitle: '{name} shared a note with you',
+    open: 'Open',
+    unread: 'Unread',
+  },
   shortcuts: {
     title: 'Keyboard shortcuts',
     description: 'Use these when you are not typing in a field.',

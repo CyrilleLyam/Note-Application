@@ -237,6 +237,18 @@ const zh: MessageSchema = {
     createYourOwn: '创建你自己的笔记',
     backToNotes: '返回笔记列表',
   },
+  notifications: {
+    title: '通知',
+    bellLabel: '通知（{count} 条未读）',
+    markAllRead: '全部标为已读',
+    empty: '暂无通知',
+    emptyDescription: '当有人与你共享笔记时，会显示在这里。',
+    loadError: '无法加载通知。',
+    noteShared: '{name} 与你共享了 {title}',
+    toastTitle: '{name} 与你共享了一篇笔记',
+    open: '打开',
+    unread: '未读',
+  },
   shortcuts: {
     title: '键盘快捷键',
     description: '不在输入框中输入时可以使用这些快捷键。',

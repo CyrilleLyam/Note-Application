@@ -5,6 +5,7 @@ import { AlertCircle, Keyboard, NotebookText, Plus, RotateCcw, SearchX, Trash2, 
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Button } from '@/core/components/ui/button'
 import { Card } from '@/core/components/ui/card'
@@ -24,6 +25,8 @@ import { useNotesStore } from '../store/notesStore'
 import { useShareStore } from '../store/shareStore'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const notesStore = useNotesStore()
 const shareStore = useShareStore()
@@ -99,6 +102,19 @@ function openDetail(note: Note) {
   selectedNoteId.value = note.id
   isDetailOpen.value = true
 }
+
+watch(() => route.query.note, (noteParam) => {
+  const noteId = Number(noteParam)
+  if (!noteParam || !Number.isInteger(noteId)) {
+    return
+  }
+  if (route.query.view === 'shared') {
+    notesStore.setView('shared')
+  }
+  selectedNoteId.value = noteId
+  isDetailOpen.value = true
+  router.replace({ query: {} })
+}, { immediate: true })
 
 function openEdit(note: Note) {
   isDetailOpen.value = false
