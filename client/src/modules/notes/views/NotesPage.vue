@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Note } from '../models/note'
 import type { NotesView } from '../store/notesStore'
-import { AlertCircle, Keyboard, NotebookText, Plus, RotateCcw, SearchX, Trash2 } from '@lucide/vue'
+import { AlertCircle, Keyboard, NotebookText, Plus, RotateCcw, SearchX, Trash2, Users } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -17,14 +17,17 @@ import NoteDetailDialog from '../components/NoteDetailDialog.vue'
 import NoteFormDialog from '../components/NoteFormDialog.vue'
 import NotesPagination from '../components/NotesPagination.vue'
 import NotesToolbar from '../components/NotesToolbar.vue'
+import ShareNoteDialog from '../components/ShareNoteDialog.vue'
 import ShortcutsDialog from '../components/ShortcutsDialog.vue'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useNotesStore } from '../store/notesStore'
+import { useShareStore } from '../store/shareStore'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 const notesStore = useNotesStore()
-const { notes, meta, isLoading, hasLoaded, error, page, query, hasActiveFilters, view, isTrashView } = storeToRefs(notesStore)
+const shareStore = useShareStore()
+const { notes, meta, isLoading, hasLoaded, error, page, query, hasActiveFilters, view, isTrashView, isSharedView } = storeToRefs(notesStore)
 
 const toolbar = ref<InstanceType<typeof NotesToolbar> | null>(null)
 const isFormOpen = ref(false)
@@ -35,21 +38,32 @@ const isDeleteOpen = ref(false)
 const deleteMode = ref<'note' | 'trash'>('note')
 const deletingNote = ref<Note | null>(null)
 const isShortcutsOpen = ref(false)
+const isShareOpen = ref(false)
+const sharingNote = ref<Note | null>(null)
 
-const views: Array<{ value: NotesView, labelKey: 'notes.viewNotes' | 'notes.viewTrash' }> = [
+const views: Array<{ value: NotesView, labelKey: 'notes.viewNotes' | 'notes.viewShared' | 'notes.viewTrash' }> = [
   { value: 'active', labelKey: 'notes.viewNotes' },
+  { value: 'shared', labelKey: 'notes.viewShared' },
   { value: 'trash', labelKey: 'notes.viewTrash' },
 ]
 
+const pageTitle = computed(() => {
+  if (isTrashView.value) {
+    return t('notes.trashTitle')
+  }
+  return isSharedView.value ? t('notes.sharedTitle') : t('notes.pageTitle')
+})
+
 const summary = computed(() => {
+  const viewSummary = isTrashView.value ? t('notes.trashSummary') : isSharedView.value ? t('notes.sharedSummary') : null
   if (!meta.value) {
-    return isTrashView.value ? t('notes.trashSummary') : t('notes.summaryEmpty')
+    return viewSummary ?? t('notes.summaryEmpty')
   }
   const count = meta.value.totalCount
   if (hasActiveFilters.value) {
     return t('notes.countMatching', count)
   }
-  return isTrashView.value ? `${t('notes.count', count)} · ${t('notes.trashSummary')}` : t('notes.count', count)
+  return viewSummary ? `${t('notes.count', count)} · ${viewSummary}` : t('notes.count', count)
 })
 
 watch(query, () => {
@@ -66,7 +80,7 @@ onMounted(() => {
 
 useKeyboardShortcuts({
   'n': () => {
-    if (!isTrashView.value) {
+    if (view.value === 'active') {
       openCreate()
     }
   },
@@ -90,6 +104,12 @@ function openEdit(note: Note) {
   isDetailOpen.value = false
   editingNote.value = note
   isFormOpen.value = true
+}
+
+function openShare(note: Note) {
+  isDetailOpen.value = false
+  sharingNote.value = note
+  isShareOpen.value = true
 }
 
 function closeDetailFor(id: number) {
@@ -140,6 +160,21 @@ async function handleTrash(note: Note) {
   }
 }
 
+async function handleLeave(note: Note) {
+  if (!auth.user) {
+    return
+  }
+  try {
+    await shareStore.removeShare(note.id, auth.user.id)
+    closeDetailFor(note.id)
+    void notesStore.fetchNotes()
+    toast.success(t('notes.toasts.leftNote', { title: note.title }))
+  }
+  catch (err) {
+    toast.error(describeError(err))
+  }
+}
+
 function openDeleteForever(note: Note) {
   deleteMode.value = 'note'
   deletingNote.value = note
@@ -167,7 +202,7 @@ function handleDeleted(id: number | null) {
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="space-y-1">
           <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
-            {{ isTrashView ? t('notes.trashTitle') : t('notes.pageTitle') }}
+            {{ pageTitle }}
           </h1>
           <p class="text-sm text-muted-foreground" aria-live="polite">
             {{ summary }}
@@ -200,7 +235,7 @@ function handleDeleted(id: number | null) {
             <Trash2 class="h-4 w-4" />
             <span>{{ t('notes.emptyTrash') }}</span>
           </Button>
-          <Button v-else aria-keyshortcuts="n" @click="openCreate">
+          <Button v-else-if="!isSharedView" aria-keyshortcuts="n" @click="openCreate">
             <Plus class="h-4 w-4" />
             <span>{{ t('notes.newNote') }}</span>
           </Button>
@@ -247,9 +282,11 @@ function handleDeleted(id: number | null) {
               @view="openDetail"
               @edit="openEdit"
               @toggle-pin="handleTogglePin"
+              @share="openShare"
               @trash="handleTrash"
               @restore="handleRestore"
               @delete-forever="openDeleteForever"
+              @leave="handleLeave"
             />
           </li>
         </ul>
@@ -277,6 +314,20 @@ function handleDeleted(id: number | null) {
           <RotateCcw class="h-4 w-4" />
           <span>{{ t('notes.resetFilters') }}</span>
         </Button>
+      </Card>
+
+      <Card v-else-if="isSharedView" class="items-center gap-4 p-12 text-center">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Users class="h-6 w-6" />
+        </div>
+        <div class="space-y-1">
+          <h2 class="font-semibold">
+            {{ t('notes.sharedEmptyTitle') }}
+          </h2>
+          <p class="text-sm text-muted-foreground">
+            {{ t('notes.sharedEmptyDescription') }}
+          </p>
+        </div>
       </Card>
 
       <Card v-else-if="isTrashView" class="items-center gap-4 p-12 text-center">
@@ -318,9 +369,11 @@ function handleDeleted(id: number | null) {
       :note-id="selectedNoteId"
       @edit="openEdit"
       @toggle-pin="handleTogglePin"
+      @share="openShare"
       @trash="handleTrash"
       @restore="handleRestore"
       @delete-forever="openDeleteForever"
+      @leave="handleLeave"
     />
     <DeleteNoteDialog
       v-model:open="isDeleteOpen"
@@ -328,6 +381,7 @@ function handleDeleted(id: number | null) {
       :note="deletingNote"
       @deleted="handleDeleted"
     />
+    <ShareNoteDialog v-model:open="isShareOpen" :note="sharingNote" />
     <ShortcutsDialog v-model:open="isShortcutsOpen" />
   </AppLayout>
 </template>

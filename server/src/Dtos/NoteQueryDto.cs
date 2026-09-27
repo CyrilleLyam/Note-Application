@@ -24,4 +24,7 @@ public class NoteQueryDto : PaginationQueryDto
 
     [FromQuery(Name = "trashed")]
     public bool Trashed { get; set; }
+
+    [FromQuery(Name = "shared")]
+    public bool Shared { get; set; }
 }

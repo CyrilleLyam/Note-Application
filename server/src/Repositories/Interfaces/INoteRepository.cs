@@ -10,6 +10,7 @@ public interface INoteRepository
     Task<bool> ExistsActive(int id, int userId, CancellationToken cancellationToken);
     Task<Note> Create(Note note, CancellationToken cancellationToken);
     Task<Note?> Update(Note note, CancellationToken cancellationToken);
+    Task<bool> UpdateAsEditor(Note note, CancellationToken cancellationToken);
     Task<Note?> SetPinned(int id, int userId, bool isPinned, CancellationToken cancellationToken);
     Task<bool> MoveToTrash(int id, int userId, CancellationToken cancellationToken);
     Task<Note?> Restore(int id, int userId, CancellationToken cancellationToken);

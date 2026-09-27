@@ -26,13 +26,36 @@ public class NoteRepository : INoteRepository
 
     public async Task<(IEnumerable<Note> Items, int TotalCount)> GetAll(int userId, NoteQueryDto queryDto, CancellationToken cancellationToken)
     {
-        var conditions = new List<string>
-        {
-            "n.user_id = @UserId",
-            queryDto.Trashed ? "n.deleted_at IS NOT NULL" : "n.deleted_at IS NULL"
-        };
+        var conditions = new List<string>();
         var parameters = new DynamicParameters();
         parameters.Add("UserId", userId);
+
+        string from;
+        string columns;
+        if (queryDto.Shared)
+        {
+            from = """
+                notes n
+                INNER JOIN note_shares s ON s.note_id = n.id AND s.user_id = @UserId
+                INNER JOIN users o ON o.id = n.user_id
+                """;
+            columns = """
+                n.id, n.user_id, n.title, n.content, CAST(0 AS BIT) AS is_pinned,
+                n.created_at, n.updated_at, n.deleted_at, n.row_version,
+                s.permission, COALESCE(o.display_name, o.username) AS owner_name
+                """;
+            conditions.Add("n.deleted_at IS NULL");
+        }
+        else
+        {
+            from = "notes n";
+            columns = """
+                n.id, n.user_id, n.title, n.content, n.is_pinned,
+                n.created_at, n.updated_at, n.deleted_at, n.row_version
+                """;
+            conditions.Add("n.user_id = @UserId");
+            conditions.Add(queryDto.Trashed ? "n.deleted_at IS NOT NULL" : "n.deleted_at IS NULL");
+        }
 
         if (!string.IsNullOrWhiteSpace(queryDto.Search))
         {
@@ -66,18 +89,17 @@ public class NoteRepository : INoteRepository
 
         var sortColumn = SortColumns.GetValueOrDefault(queryDto.SortBy ?? string.Empty, "n.created_at");
         var sortDirection = string.Equals(queryDto.SortOrder, "asc", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
-        var pinnedFirst = queryDto.Trashed ? string.Empty : "n.is_pinned DESC, ";
+        var pinnedFirst = queryDto.Trashed || queryDto.Shared ? string.Empty : "n.is_pinned DESC, ";
         var where = string.Join(" AND ", conditions);
 
         parameters.Add("Offset", (queryDto.Page - 1) * queryDto.PageSize);
         parameters.Add("PageSize", queryDto.PageSize);
 
         var sql = $"""
-            SELECT COUNT(*) FROM notes n WHERE {where};
+            SELECT COUNT(*) FROM {from} WHERE {where};
 
-            SELECT n.id, n.user_id, n.title, n.content, n.is_pinned,
-                   n.created_at, n.updated_at, n.deleted_at, n.row_version
-            FROM notes n
+            SELECT {columns}
+            FROM {from}
             WHERE {where}
             ORDER BY {pinnedFirst}{sortColumn} {sortDirection}, n.id {sortDirection}
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
@@ -103,10 +125,16 @@ public class NoteRepository : INoteRepository
     public async Task<Note?> GetById(int id, int userId, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, user_id, title, content, is_pinned,
-                   created_at, updated_at, deleted_at, row_version
-            FROM notes
-            WHERE id = @Id AND user_id = @UserId
+            SELECT n.id, n.user_id, n.title, n.content,
+                   CASE WHEN n.user_id = @UserId THEN n.is_pinned ELSE CAST(0 AS BIT) END AS is_pinned,
+                   n.created_at, n.updated_at, n.deleted_at, n.row_version,
+                   CASE WHEN n.user_id = @UserId THEN N'owner' ELSE s.permission END AS permission,
+                   CASE WHEN n.user_id = @UserId THEN NULL ELSE COALESCE(o.display_name, o.username) END AS owner_name
+            FROM notes n
+            INNER JOIN users o ON o.id = n.user_id
+            LEFT JOIN note_shares s ON s.note_id = n.id AND s.user_id = @UserId
+            WHERE n.id = @Id
+              AND (n.user_id = @UserId OR (s.user_id IS NOT NULL AND n.deleted_at IS NULL))
             """;
 
         await using var connection = _connectionFactory.CreateConnection();
@@ -187,6 +215,25 @@ public class NoteRepository : INoteRepository
 
         updated.Tags = note.Tags.Order(StringComparer.OrdinalIgnoreCase).ToList();
         return updated;
+    }
+
+    public async Task<bool> UpdateAsEditor(Note note, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE n
+            SET title = @Title, content = @Content, updated_at = SYSUTCDATETIME()
+            FROM notes n
+            WHERE n.id = @Id AND n.deleted_at IS NULL AND n.row_version = @RowVersion
+              AND EXISTS (
+                  SELECT 1 FROM note_shares s
+                  WHERE s.note_id = n.id AND s.user_id = @UserId AND s.permission = N'edit'
+              )
+            """;
+
+        await using var connection = _connectionFactory.CreateConnection();
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { note.Id, note.UserId, note.Title, note.Content, note.RowVersion }, cancellationToken: cancellationToken));
+        return affected > 0;
     }
 
     public async Task<Note?> SetPinned(int id, int userId, bool isPinned, CancellationToken cancellationToken)

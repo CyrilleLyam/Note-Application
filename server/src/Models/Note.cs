@@ -12,4 +12,6 @@ public class Note
     public DateTime? DeletedAt { get; set; }
     public byte[] RowVersion { get; set; } = [];
     public List<string> Tags { get; set; } = [];
+    public string Permission { get; set; } = NotePermissions.Owner;
+    public string? OwnerName { get; set; }
 }

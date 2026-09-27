@@ -35,7 +35,7 @@ export const SORT_OPTIONS = {
 
 export type DateFilter = keyof typeof DATE_FILTERS
 export type SortOption = keyof typeof SORT_OPTIONS
-export type NotesView = 'active' | 'trash'
+export type NotesView = 'active' | 'shared' | 'trash'
 
 const DEFAULT_DATE_FILTER: DateFilter = 'all'
 const DEFAULT_SORT: SortOption = 'newest'
@@ -66,6 +66,7 @@ export const useNotesStore = defineStore('notes', () => {
   const debouncedSearch = refDebounced(search, 300)
 
   const isTrashView = computed(() => view.value === 'trash')
+  const isSharedView = computed(() => view.value === 'shared')
 
   const hasActiveFilters = computed(() => debouncedSearch.value.trim() !== ''
     || tag.value !== null
@@ -81,6 +82,7 @@ export const useNotesStore = defineStore('notes', () => {
       search: debouncedSearch.value.trim() || undefined,
       tag: tag.value ?? undefined,
       trashed: isTrashView.value || undefined,
+      shared: isSharedView.value || undefined,
       createdFrom: daysAgo === null ? undefined : startOfDayOffset(daysAgo),
       sortBy,
       sortOrder,
@@ -250,6 +252,9 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   function setView(value: NotesView) {
+    if (value === 'shared') {
+      tag.value = null
+    }
     view.value = value
   }
 
@@ -294,6 +299,7 @@ export const useNotesStore = defineStore('notes', () => {
     isDeleting,
     view,
     isTrashView,
+    isSharedView,
     search,
     tag,
     dateFilter,

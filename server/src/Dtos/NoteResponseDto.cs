@@ -11,4 +11,6 @@ public class NoteResponseDto
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public byte[] RowVersion { get; set; } = [];
+    public string Permission { get; set; } = string.Empty;
+    public string? OwnerName { get; set; }
 }

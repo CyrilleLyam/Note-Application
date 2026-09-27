@@ -1,6 +1,7 @@
 using System.Data;
 using MapsterMapper;
 using server.src.Dtos;
+using server.src.Exceptions;
 using server.src.Models;
 using server.src.Repositories.Interfaces;
 using server.src.Services.Interfaces;
@@ -10,11 +11,13 @@ namespace server.src.Services;
 public class NoteService : INoteService
 {
     private readonly INoteRepository _noteRepository;
+    private readonly INoteShareRepository _noteShareRepository;
     private readonly IMapper _mapper;
 
-    public NoteService(INoteRepository noteRepository, IMapper mapper)
+    public NoteService(INoteRepository noteRepository, INoteShareRepository noteShareRepository, IMapper mapper)
     {
         _noteRepository = noteRepository;
+        _noteShareRepository = noteShareRepository;
         _mapper = mapper;
     }
 
@@ -50,17 +53,36 @@ public class NoteService : INoteService
 
     public async Task<NoteResponseDto?> Update(int id, int userId, UpdateNoteDto updateNoteDto, CancellationToken cancellationToken)
     {
+        var permission = await _noteShareRepository.GetPermission(id, userId, cancellationToken);
+        if (permission == null)
+        {
+            return null;
+        }
+
+        if (permission == NotePermissions.View)
+        {
+            throw new ForbiddenException("You can only view this note.");
+        }
+
         var note = _mapper.Map<Note>(updateNoteDto);
         note.Id = id;
         note.UserId = userId;
 
-        var updated = await _noteRepository.Update(note, cancellationToken);
-        if (updated != null)
+        if (permission == NotePermissions.Owner)
         {
-            return _mapper.Map<NoteResponseDto>(updated);
+            var updated = await _noteRepository.Update(note, cancellationToken);
+            if (updated != null)
+            {
+                return _mapper.Map<NoteResponseDto>(updated);
+            }
+        }
+        else if (await _noteRepository.UpdateAsEditor(note, cancellationToken))
+        {
+            var updated = await _noteRepository.GetById(id, userId, cancellationToken);
+            return updated == null ? null : _mapper.Map<NoteResponseDto>(updated);
         }
 
-        if (await _noteRepository.ExistsActive(id, userId, cancellationToken))
+        if (await _noteShareRepository.GetPermission(id, userId, cancellationToken) != null)
         {
             throw new DBConcurrencyException("This note was changed somewhere else after you opened it.");
         }

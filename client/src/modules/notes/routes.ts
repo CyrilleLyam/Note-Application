@@ -7,6 +7,11 @@ export const notesRoutes: RouteRecordRaw[] = [
     component: () => import('@/modules/notes/views/NotesPage.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/s/:token',
+    name: 'shared-note',
+    component: () => import('@/modules/notes/views/SharedNotePage.vue'),
+  },
 ]
 
 export default notesRoutes

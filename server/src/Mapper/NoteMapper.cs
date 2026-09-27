@@ -21,6 +21,10 @@ public class NoteMapper : IRegister
 
         config.NewConfig<Note, NoteResponseDto>();
 
+        config.NewConfig<SharedNote, SharedNoteResponseDto>();
+
+        config.NewConfig<NoteShare, NoteShareResponseDto>();
+
         config.NewConfig<TagSummary, TagResponseDto>();
     }
 }

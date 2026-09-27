@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Note } from '../models/note'
-import { ArchiveRestore, Calendar, EllipsisVertical, Eye, Pencil, Pin, PinOff, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, Calendar, EllipsisVertical, Eye, LogOut, Pencil, Pin, PinOff, Share2, Trash2, Users } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Badge } from '@/core/components/ui/badge'
@@ -24,9 +24,11 @@ const emit = defineEmits<{
   view: [note: Note]
   edit: [note: Note]
   togglePin: [note: Note]
+  share: [note: Note]
   trash: [note: Note]
   restore: [note: Note]
   deleteForever: [note: Note]
+  leave: [note: Note]
 }>()
 
 const MAX_VISIBLE_TAGS = 3
@@ -34,6 +36,7 @@ const MAX_VISIBLE_TAGS = 3
 const { t } = useI18n()
 
 const isTrashed = computed(() => !!props.note.deletedAt)
+const isOwner = computed(() => props.note.permission === 'owner')
 const preview = computed(() => props.note.content ? markdownToText(props.note.content) : '')
 const visibleTags = computed(() => props.note.tags.slice(0, MAX_VISIBLE_TAGS))
 const hiddenTagCount = computed(() => props.note.tags.length - visibleTags.value.length)
@@ -83,6 +86,17 @@ const hiddenTagCount = computed(() => props.note.tags.length - visibleTags.value
               <span>{{ t('notes.actions.deleteForever') }}</span>
             </DropdownMenuItem>
           </template>
+          <template v-else-if="!isOwner">
+            <DropdownMenuItem v-if="note.permission === 'edit'" class="cursor-pointer" @select="emit('edit', note)">
+              <Pencil />
+              <span>{{ t('notes.actions.edit') }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" class="cursor-pointer" @select="emit('leave', note)">
+              <LogOut />
+              <span>{{ t('notes.actions.leave') }}</span>
+            </DropdownMenuItem>
+          </template>
           <template v-else>
             <DropdownMenuItem class="cursor-pointer" @select="emit('edit', note)">
               <Pencil />
@@ -92,6 +106,10 @@ const hiddenTagCount = computed(() => props.note.tags.length - visibleTags.value
               <PinOff v-if="note.isPinned" />
               <Pin v-else />
               <span>{{ note.isPinned ? t('notes.actions.unpin') : t('notes.actions.pin') }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem class="cursor-pointer" @select="emit('share', note)">
+              <Share2 />
+              <span>{{ t('notes.actions.share') }}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" class="cursor-pointer" @select="emit('trash', note)">
@@ -129,11 +147,22 @@ const hiddenTagCount = computed(() => props.note.tags.length - visibleTags.value
         <Trash2 class="h-3.5 w-3.5" />
         {{ t('notes.deletedAt', { date: formatDate(note.deletedAt) }) }}
       </span>
+      <span
+        v-else-if="!isOwner"
+        class="flex min-w-0 items-center gap-1.5"
+        :title="t('notes.createdAt', { date: formatDateTime(note.createdAt) })"
+      >
+        <Users class="h-3.5 w-3.5 shrink-0" />
+        <span class="truncate">{{ t('notes.sharedBy', { name: note.ownerName }) }}</span>
+      </span>
       <span v-else class="flex items-center gap-1.5" :title="t('notes.createdAt', { date: formatDateTime(note.createdAt) })">
         <Calendar class="h-3.5 w-3.5" />
         {{ formatDate(note.createdAt) }}
       </span>
-      <Badge v-if="note.updatedAt && !isTrashed" variant="secondary" :title="t('notes.updatedAt', { date: formatDateTime(note.updatedAt) })">
+      <Badge v-if="!isOwner" variant="outline" class="shrink-0">
+        {{ note.permission === 'edit' ? t('notes.share.people.canEdit') : t('notes.share.people.canView') }}
+      </Badge>
+      <Badge v-else-if="note.updatedAt && !isTrashed" variant="secondary" :title="t('notes.updatedAt', { date: formatDateTime(note.updatedAt) })">
         {{ t('notes.edited', { time: formatRelative(note.updatedAt) }) }}
       </Badge>
     </CardFooter>

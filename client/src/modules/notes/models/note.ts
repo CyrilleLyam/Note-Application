@@ -1,3 +1,7 @@
+export type NotePermission = 'owner' | 'edit' | 'view'
+
+export type SharePermission = Exclude<NotePermission, 'owner'>
+
 export interface Note {
   id: number
   title: string
@@ -8,6 +12,8 @@ export interface Note {
   updatedAt: string | null
   deletedAt: string | null
   rowVersion: string
+  permission: NotePermission
+  ownerName: string | null
 }
 
 export interface Tag {
@@ -29,6 +35,7 @@ export interface NoteQuery {
   sortOrder?: SortOrder
   tag?: string
   trashed?: boolean
+  shared?: boolean
 }
 
 export interface NotePayload {
@@ -43,4 +50,30 @@ export interface UpdateNotePayload extends NotePayload {
 
 export interface EmptyTrashResult {
   deletedCount: number
+}
+
+export interface ShareLink {
+  token: string | null
+}
+
+export interface NoteShare {
+  userId: number
+  username: string
+  displayName: string | null
+  email: string
+  permission: SharePermission
+  createdAt: string
+}
+
+export interface NoteSharePayload {
+  email: string
+  permission: SharePermission
+}
+
+export interface SharedNote {
+  title: string
+  content: string | null
+  author: string
+  createdAt: string
+  updatedAt: string | null
 }

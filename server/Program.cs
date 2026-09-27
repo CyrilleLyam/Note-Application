@@ -55,6 +55,8 @@ builder.Services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(con
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<INoteShareLinkRepository, NoteShareLinkRepository>();
+builder.Services.AddScoped<INoteShareRepository, NoteShareRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IEmailLogRepository, EmailLogRepository>();
 builder.Services.AddSingleton<IStorageService, MinioStorageService>();
@@ -62,6 +64,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<INoteShareService, NoteShareService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEventPublisher, EventPublisher>();
@@ -173,6 +176,15 @@ builder.Services.AddRateLimiter(options =>
         {
             PermitLimit = RateLimitPolicies.AuthPermitLimit,
             Window = RateLimitPolicies.AuthWindow,
+            QueueLimit = 0
+        }));
+
+    options.AddPolicy(RateLimitPolicies.Public, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        $"{httpContext.Connection.RemoteIpAddress}|{httpContext.GetEndpoint()?.DisplayName}",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = RateLimitPolicies.PublicPermitLimit,
+            Window = RateLimitPolicies.PublicWindow,
             QueueLimit = 0
         }));
 

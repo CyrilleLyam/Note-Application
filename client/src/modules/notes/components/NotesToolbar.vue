@@ -19,7 +19,7 @@ const ALL_TAGS = '__all__'
 
 const { t } = useI18n()
 const notesStore = useNotesStore()
-const { search, tag, tags, dateFilter, sort, hasActiveFilters } = storeToRefs(notesStore)
+const { search, tag, tags, dateFilter, sort, hasActiveFilters, isSharedView } = storeToRefs(notesStore)
 
 const searchWrapper = ref<HTMLElement | null>(null)
 
@@ -62,7 +62,7 @@ defineExpose({ focusSearch })
     </div>
 
     <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-      <Select v-if="tags.length" v-model="tagValue">
+      <Select v-if="tags.length && !isSharedView" v-model="tagValue">
         <SelectTrigger class="col-span-2 w-full sm:w-40" :aria-label="t('notes.filterByTag')">
           <Tags class="h-4 w-4" />
           <SelectValue class="flex-1 text-left">

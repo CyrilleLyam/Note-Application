@@ -62,6 +62,7 @@ const { errors, handleSubmit, isSubmitting, meta, resetForm, setValues, values }
 })
 
 const isEditing = computed(() => !!props.note)
+const canEditTags = computed(() => !props.note || props.note.permission === 'owner')
 const canSubmit = computed(() => !isSubmitting.value
   && !isResolving.value
   && !hasConflict.value
@@ -236,7 +237,15 @@ function submitWithShortcut() {
       <DialogHeader>
         <DialogTitle>{{ isEditing ? t('notes.form.editTitle') : t('notes.form.newTitle') }}</DialogTitle>
         <DialogDescription>
-          {{ isEditing ? t('notes.form.editDescription') : t('notes.form.newDescription') }}
+          <template v-if="!isEditing">
+            {{ t('notes.form.newDescription') }}
+          </template>
+          <template v-else-if="canEditTags">
+            {{ t('notes.form.editDescription') }}
+          </template>
+          <template v-else>
+            {{ t('notes.form.editSharedDescription', { name: note?.ownerName ?? '' }) }}
+          </template>
         </DialogDescription>
       </DialogHeader>
 
@@ -309,7 +318,7 @@ function submitWithShortcut() {
           </FormItem>
         </FormField>
 
-        <FormField v-slot="{ componentField }" name="tags">
+        <FormField v-if="canEditTags" v-slot="{ componentField }" name="tags">
           <FormItem>
             <FormLabel>
               {{ t('notes.form.tags') }}

@@ -49,3 +49,58 @@ Authorization: Bearer {{token}}
 
 GET {{server_HostAddress}}/health
 X-Correlation-ID: manual-check-001
+
+###
+
+GET {{server_HostAddress}}/api/notes/1/share
+Authorization: Bearer {{token}}
+
+###
+
+POST {{server_HostAddress}}/api/notes/1/share
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{server_HostAddress}}/api/notes/1/share
+Authorization: Bearer {{token}}
+
+###
+
+GET {{server_HostAddress}}/api/shared/SHARE_TOKEN_FROM_POST_RESPONSE
+
+###
+
+GET {{server_HostAddress}}/api/notes?shared=true
+Authorization: Bearer {{token}}
+
+###
+
+GET {{server_HostAddress}}/api/notes/1/shares
+Authorization: Bearer {{token}}
+
+###
+
+POST {{server_HostAddress}}/api/notes/1/shares
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "sophea@example.com",
+  "permission": "view"
+}
+
+###
+
+PATCH {{server_HostAddress}}/api/notes/1/shares/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "permission": "edit"
+}
+
+###
+
+DELETE {{server_HostAddress}}/api/notes/1/shares/2
+Authorization: Bearer {{token}}

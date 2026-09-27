@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Note } from '../models/note'
-import { AlertCircle, ArchiveRestore, Calendar, CalendarClock, Pencil, Pin, PinOff, Trash2 } from '@lucide/vue'
+import { AlertCircle, ArchiveRestore, Calendar, CalendarClock, LogOut, Pencil, Pin, PinOff, Share2, Trash2, Users } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -26,9 +26,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [note: Note]
   togglePin: [note: Note]
+  share: [note: Note]
   trash: [note: Note]
   restore: [note: Note]
   deleteForever: [note: Note]
+  leave: [note: Note]
 }>()
 
 const open = defineModel<boolean>('open', { required: true })
@@ -38,6 +40,7 @@ const notesStore = useNotesStore()
 const { currentNote: note, noteError: error } = storeToRefs(notesStore)
 
 const isTrashed = computed(() => !!note.value?.deletedAt)
+const isOwner = computed(() => note.value?.permission === 'owner')
 
 function loadNote() {
   if (props.noteId !== null) {
@@ -62,6 +65,12 @@ watch([open, () => props.noteId], ([isOpen]) => {
             <span>{{ note.title }}</span>
           </DialogTitle>
           <DialogDescription class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span v-if="!isOwner" class="flex items-center gap-1.5 font-medium text-foreground">
+              <Users class="h-3.5 w-3.5" />
+              {{ t('notes.sharedBy', { name: note.ownerName }) }}
+              ·
+              {{ note.permission === 'edit' ? t('notes.share.people.canEdit') : t('notes.share.people.canView') }}
+            </span>
             <span class="flex items-center gap-1.5">
               <Calendar class="h-3.5 w-3.5" />
               {{ t('notes.createdAt', { date: formatDateTime(note.createdAt) }) }}
@@ -103,12 +112,26 @@ watch([open, () => props.noteId], ([isOpen]) => {
               <span>{{ t('notes.actions.restore') }}</span>
             </Button>
           </template>
+          <template v-else-if="!isOwner">
+            <Button variant="outline" class="text-destructive hover:text-destructive" @click="emit('leave', note)">
+              <LogOut class="h-4 w-4" />
+              <span>{{ t('notes.actions.leave') }}</span>
+            </Button>
+            <Button v-if="note.permission === 'edit'" @click="emit('edit', note)">
+              <Pencil class="h-4 w-4" />
+              <span>{{ t('notes.actions.edit') }}</span>
+            </Button>
+          </template>
           <template v-else>
             <Button variant="outline" class="text-destructive hover:text-destructive" @click="emit('trash', note)">
               <Trash2 class="h-4 w-4" />
               <span>{{ t('notes.actions.moveToTrash') }}</span>
             </Button>
             <div class="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button variant="outline" @click="emit('share', note)">
+                <Share2 class="h-4 w-4" />
+                <span>{{ t('notes.actions.share') }}</span>
+              </Button>
               <Button variant="outline" :aria-pressed="note.isPinned" @click="emit('togglePin', note)">
                 <PinOff v-if="note.isPinned" class="h-4 w-4" />
                 <Pin v-else class="h-4 w-4" />
