@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
 using server.src.Config;
 using server.src.Dtos;
 using server.src.Extensions;
@@ -26,44 +25,23 @@ public class AuthController : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<ActionResult<BaseResponse<AuthResponseDto>>> Register([FromBody] RegisterDto registerDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _authService.Register(registerDto, cancellationToken);
-            return Ok(new BaseResponse<AuthResponseDto>(result));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = true, status = StatusCodes.Status400BadRequest, message = ex.Message });
-        }
+        var result = await _authService.Register(registerDto, cancellationToken);
+        return Ok(new BaseResponse<AuthResponseDto>(result));
     }
 
     [HttpPost("login")]
     [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<ActionResult<BaseResponse<AuthResponseDto>>> Login([FromBody] LoginDto loginDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _authService.Login(loginDto, cancellationToken);
-            return Ok(new BaseResponse<AuthResponseDto>(result));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { error = true, status = StatusCodes.Status401Unauthorized, message = ex.Message });
-        }
+        var result = await _authService.Login(loginDto, cancellationToken);
+        return Ok(new BaseResponse<AuthResponseDto>(result));
     }
 
     [HttpPost("refresh")]
     public async Task<ActionResult<BaseResponse<AuthResponseDto>>> Refresh([FromBody] RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _authService.RefreshToken(refreshTokenDto, cancellationToken);
-            return Ok(new BaseResponse<AuthResponseDto>(result));
-        }
-        catch (SecurityTokenException ex)
-        {
-            return Unauthorized(new { error = true, status = StatusCodes.Status401Unauthorized, message = ex.Message });
-        }
+        var result = await _authService.RefreshToken(refreshTokenDto, cancellationToken);
+        return Ok(new BaseResponse<AuthResponseDto>(result));
     }
 
     [HttpPost("revoke")]

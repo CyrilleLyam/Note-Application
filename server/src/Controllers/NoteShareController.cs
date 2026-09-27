@@ -67,23 +67,12 @@ public class NoteShareController : ControllerBase
     [HttpPost("notes/{id:int}/shares")]
     public async Task<ActionResult<BaseResponse<NoteShareResponseDto>>> AddShare(int id, [FromBody] AddNoteShareDto addNoteShareDto, CancellationToken cancellationToken)
     {
-        try
+        var share = await _noteShareService.AddShare(id, User.GetUserId(), addNoteShareDto, cancellationToken);
+        if (share == null)
         {
-            var share = await _noteShareService.AddShare(id, User.GetUserId(), addNoteShareDto, cancellationToken);
-            if (share == null)
-            {
-                return NoteNotFound();
-            }
-            return Ok(new BaseResponse<NoteShareResponseDto>(share));
+            return NoteNotFound();
         }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = true, status = StatusCodes.Status404NotFound, message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = true, status = StatusCodes.Status400BadRequest, message = ex.Message });
-        }
+        return Ok(new BaseResponse<NoteShareResponseDto>(share));
     }
 
     [HttpPatch("notes/{id:int}/shares/{userId:int}")]

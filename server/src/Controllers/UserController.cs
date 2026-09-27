@@ -32,52 +32,23 @@ public class UserController : ControllerBase
     [HttpPut("profile")]
     public async Task<ActionResult<BaseResponse<UserDto>>> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken)
     {
-        try
-        {
-            var user = await _userService.UpdateProfile(User.GetUserId(), dto, cancellationToken);
-            return Ok(new BaseResponse<UserDto>(user));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = true, status = StatusCodes.Status400BadRequest, message = ex.Message });
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = true, status = StatusCodes.Status404NotFound, message = "User not found." });
-        }
+        var user = await _userService.UpdateProfile(User.GetUserId(), dto, cancellationToken);
+        return Ok(new BaseResponse<UserDto>(user));
     }
 
     [HttpPost("profile/avatar")]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<BaseResponse<UserDto>>> UploadAvatar(IFormFile file, CancellationToken cancellationToken)
     {
-        try
-        {
-            var user = await _userService.UpdateAvatar(User.GetUserId(), file, cancellationToken);
-            return Ok(new BaseResponse<UserDto>(user));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = true, status = StatusCodes.Status400BadRequest, message = ex.Message });
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = true, status = StatusCodes.Status404NotFound, message = "User not found." });
-        }
+        var user = await _userService.UpdateAvatar(User.GetUserId(), file, cancellationToken);
+        return Ok(new BaseResponse<UserDto>(user));
     }
 
     [HttpDelete("profile/avatar")]
     public async Task<ActionResult<BaseResponse<UserDto>>> DeleteAvatar(CancellationToken cancellationToken)
     {
-        try
-        {
-            var user = await _userService.DeleteAvatar(User.GetUserId(), cancellationToken);
-            return Ok(new BaseResponse<UserDto>(user));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { error = true, status = StatusCodes.Status404NotFound, message = "User not found." });
-        }
+        var user = await _userService.DeleteAvatar(User.GetUserId(), cancellationToken);
+        return Ok(new BaseResponse<UserDto>(user));
     }
 
     [AllowAnonymous]

@@ -1,8 +1,6 @@
-using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using server.src.Dtos;
-using server.src.Exceptions;
 using server.src.Extensions;
 using server.src.Services.Interfaces;
 
@@ -48,23 +46,12 @@ public class NoteController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<BaseResponse<NoteResponseDto>>> Update(int id, [FromBody] UpdateNoteDto updateNoteDto, CancellationToken cancellationToken)
     {
-        try
+        var updated = await _noteService.Update(id, User.GetUserId(), updateNoteDto, cancellationToken);
+        if (updated == null)
         {
-            var updated = await _noteService.Update(id, User.GetUserId(), updateNoteDto, cancellationToken);
-            if (updated == null)
-            {
-                return NoteNotFound();
-            }
-            return Ok(new BaseResponse<NoteResponseDto>(updated));
+            return NoteNotFound();
         }
-        catch (DBConcurrencyException ex)
-        {
-            return Conflict(new { error = true, status = StatusCodes.Status409Conflict, message = ex.Message });
-        }
-        catch (ForbiddenException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { error = true, status = StatusCodes.Status403Forbidden, message = ex.Message });
-        }
+        return Ok(new BaseResponse<NoteResponseDto>(updated));
     }
 
     [HttpPatch("{id:int}/pin")]

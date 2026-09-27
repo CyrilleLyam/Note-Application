@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.IdentityModel.Tokens;
 using server.src.Exceptions;
 
@@ -42,9 +43,13 @@ public class ExceptionMiddleware
         var (statusCode, message) = exception switch
         {
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, exception.Message),
-            SecurityTokenException => (StatusCodes.Status401Unauthorized, exception.Message),
-            StorageException => (StatusCodes.Status503ServiceUnavailable, "File storage is unavailable. Please try again later."),
-            _ => (StatusCodes.Status500InternalServerError, "An unexpected internal server error occurred.")
+            SecurityTokenException     => (StatusCodes.Status401Unauthorized, exception.Message),
+            ForbiddenException         => (StatusCodes.Status403Forbidden,    exception.Message),
+            KeyNotFoundException       => (StatusCodes.Status404NotFound,     exception.Message),
+            InvalidOperationException  => (StatusCodes.Status400BadRequest,   exception.Message),
+            DBConcurrencyException     => (StatusCodes.Status409Conflict,     exception.Message),
+            StorageException           => (StatusCodes.Status503ServiceUnavailable, "File storage is unavailable. Please try again later."),
+            _                          => (StatusCodes.Status500InternalServerError, "An unexpected internal server error occurred."),
         };
 
         context.Response.StatusCode = statusCode;
