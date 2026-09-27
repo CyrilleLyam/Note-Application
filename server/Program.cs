@@ -248,6 +248,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<CorrelationIdMiddleware>();
+if (glitchTipDsn != null)
+{
+    app.UseSentryTracing();
+}
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseRateLimiter();
