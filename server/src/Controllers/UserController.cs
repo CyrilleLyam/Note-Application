@@ -81,10 +81,10 @@ public class UserController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet("avatar/{fileName}")]
-    public async Task<IActionResult> GetAvatar(string fileName, CancellationToken cancellationToken)
+    [HttpGet("{userId:int}/avatar/{fileName}")]
+    public async Task<IActionResult> GetAvatar(int userId, string fileName, CancellationToken cancellationToken)
     {
-        var fileResult = await _userService.GetAvatar(fileName, cancellationToken);
+        var fileResult = await _userService.GetAvatar(userId, fileName, cancellationToken);
         if (fileResult == null)
         {
             return NotFound(new { error = true, status = StatusCodes.Status404NotFound, message = "Avatar not found." });

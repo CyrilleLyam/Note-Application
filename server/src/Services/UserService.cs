@@ -1,5 +1,6 @@
 using MapsterMapper;
 using Microsoft.AspNetCore.Http;
+using server.src.Config;
 using server.src.Dtos;
 using server.src.Repositories.Interfaces;
 using server.src.Services.Interfaces;
@@ -113,16 +114,19 @@ public class UserService : IUserService
             throw new KeyNotFoundException("User not found.");
         }
 
-        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+        var folder = StoragePaths.UserFolder(user.Id);
+        var fileName = $"{Guid.NewGuid():N}{canonicalExtension}";
+        await _storageService.UploadFile(folder, fileName, memoryStream, detectedContentType, cancellationToken);
+
+        var previousAvatarKey = user.AvatarKey;
+        user.AvatarKey = StoragePaths.Key(folder, fileName);
+        var updatedUser = await _userRepository.Update(user, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(previousAvatarKey))
         {
-            await _storageService.DeleteFile(user.AvatarUrl, cancellationToken);
+            await DeleteAvatarFile(previousAvatarKey, cancellationToken);
         }
 
-        var fileName = $"{Path.GetFileNameWithoutExtension(file.FileName)}{canonicalExtension}";
-        var avatarUrl = await _storageService.UploadFile(memoryStream, fileName, detectedContentType, cancellationToken);
-
-        user.AvatarUrl = avatarUrl;
-        var updatedUser = await _userRepository.Update(user, cancellationToken);
         return _mapper.Map<UserDto>(updatedUser);
     }
 
@@ -134,18 +138,37 @@ public class UserService : IUserService
             throw new KeyNotFoundException("User not found.");
         }
 
-        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+        if (!string.IsNullOrWhiteSpace(user.AvatarKey))
         {
-            await _storageService.DeleteFile(user.AvatarUrl, cancellationToken);
-            user.AvatarUrl = null;
+            var avatarKey = user.AvatarKey;
+            user.AvatarKey = null;
             user = await _userRepository.Update(user, cancellationToken);
+            await DeleteAvatarFile(avatarKey, cancellationToken);
         }
 
         return _mapper.Map<UserDto>(user);
     }
 
-    public Task<(Stream Stream, string ContentType)?> GetAvatar(string fileName, CancellationToken cancellationToken)
+    public async Task<(Stream Stream, string ContentType)?> GetAvatar(int userId, string fileName, CancellationToken cancellationToken)
     {
-        return _storageService.GetFile(fileName, cancellationToken);
+        var user = await _userRepository.GetById(userId, cancellationToken);
+        if (user == null || string.IsNullOrWhiteSpace(user.AvatarKey))
+        {
+            return null;
+        }
+
+        var (folder, storedFileName) = StoragePaths.Split(user.AvatarKey);
+        if (!string.Equals(storedFileName, fileName, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return await _storageService.GetFile(folder, storedFileName, cancellationToken);
+    }
+
+    private Task DeleteAvatarFile(string avatarKey, CancellationToken cancellationToken)
+    {
+        var (folder, fileName) = StoragePaths.Split(avatarKey);
+        return _storageService.DeleteFile(folder, fileName, cancellationToken);
     }
 }

@@ -9,7 +9,6 @@ public class MinioStorageService : IStorageService
 {
     private readonly IMinioClient _minioClient;
     private readonly string _bucketName;
-    private readonly string _publicUrl;
     private readonly ILogger<MinioStorageService> _logger;
     private bool _bucketInitialized;
     private readonly SemaphoreSlim _initLock = new(1, 1);
@@ -23,7 +22,6 @@ public class MinioStorageService : IStorageService
         var secretKey = EnvValidator.GetRequired("MINIO_SECRET_KEY");
         _bucketName = EnvValidator.GetRequired("MINIO_BUCKET_NAME");
         var useSsl = EnvValidator.GetOptionalBool("MINIO_USE_SSL", false);
-        _publicUrl = EnvValidator.GetOptional("MINIO_PUBLIC_URL") ?? (useSsl ? $"https://{endpoint}" : $"http://{endpoint}");
 
         var clientBuilder = new MinioClient()
             .WithEndpoint(endpoint)
@@ -69,12 +67,11 @@ public class MinioStorageService : IStorageService
         }
     }
 
-    public async Task<string> UploadFile(Stream stream, string fileName, string contentType, CancellationToken cancellationToken = default)
+    public async Task UploadFile(string folder, string fileName, Stream stream, string contentType, CancellationToken cancellationToken = default)
     {
-        await EnsureBucketExists(cancellationToken);
+        var objectName = BuildObjectName(folder, fileName);
 
-        var extension = Path.GetExtension(fileName);
-        var objectName = $"avatars/{Guid.NewGuid():N}{extension}";
+        await EnsureBucketExists(cancellationToken);
 
         var putObjectArgs = new PutObjectArgs()
             .WithBucket(_bucketName)
@@ -84,26 +81,14 @@ public class MinioStorageService : IStorageService
             .WithContentType(contentType);
 
         await _minioClient.PutObjectAsync(putObjectArgs, cancellationToken);
-        _logger.LogInformation("File {FileName} uploaded to MinIO bucket {Bucket} as {Object}", fileName, _bucketName, objectName);
-
-        var storedFileName = Path.GetFileName(objectName);
-        return $"/api/user/avatar/{storedFileName}";
+        _logger.LogInformation("Uploaded object {Object} to MinIO bucket {Bucket}", objectName, _bucketName);
     }
 
-    public async Task<(Stream Stream, string ContentType)?> GetFile(string fileUrlOrName, CancellationToken cancellationToken = default)
+    public async Task<(Stream Stream, string ContentType)?> GetFile(string folder, string fileName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fileUrlOrName))
-        {
-            return null;
-        }
+        var objectName = BuildObjectName(folder, fileName);
 
         await EnsureBucketExists(cancellationToken);
-
-        var objectName = ExtractObjectName(fileUrlOrName);
-        if (string.IsNullOrWhiteSpace(objectName))
-        {
-            return null;
-        }
 
         try
         {
@@ -131,20 +116,11 @@ public class MinioStorageService : IStorageService
         }
     }
 
-    public async Task DeleteFile(string fileUrlOrName, CancellationToken cancellationToken = default)
+    public async Task DeleteFile(string folder, string fileName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fileUrlOrName))
-        {
-            return;
-        }
+        var objectName = BuildObjectName(folder, fileName);
 
         await EnsureBucketExists(cancellationToken);
-
-        var objectName = ExtractObjectName(fileUrlOrName);
-        if (string.IsNullOrWhiteSpace(objectName))
-        {
-            return;
-        }
 
         try
         {
@@ -161,36 +137,11 @@ public class MinioStorageService : IStorageService
         }
     }
 
-    private string ExtractObjectName(string fileUrlOrName)
+    private static string BuildObjectName(string folder, string fileName)
     {
-        if (string.IsNullOrWhiteSpace(fileUrlOrName))
-        {
-            return string.Empty;
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-        const string apiPrefix = "/api/user/avatar/";
-        if (fileUrlOrName.StartsWith(apiPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return $"avatars/{fileUrlOrName[apiPrefix.Length..]}";
-        }
-
-        var prefix = $"{_publicUrl.TrimEnd('/')}/{_bucketName}/";
-        if (fileUrlOrName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return fileUrlOrName[prefix.Length..];
-        }
-
-        var relativePrefix = $"/{_bucketName}/";
-        if (fileUrlOrName.StartsWith(relativePrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return fileUrlOrName[relativePrefix.Length..];
-        }
-
-        if (!fileUrlOrName.Contains('/') && !fileUrlOrName.Contains('\\'))
-        {
-            return $"avatars/{fileUrlOrName}";
-        }
-
-        return fileUrlOrName;
+        return $"{folder.Trim('/')}/{fileName}";
     }
 }
