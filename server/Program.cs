@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
+using Serilog.Filters;
 using server.src.Config;
 using server.src.Data;
 using server.src.Data.Interfaces;
@@ -30,7 +31,7 @@ EnvValidator.ValidateAll();
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
+var loggerConfiguration = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
     .Enrich.FromLogContext()
@@ -38,8 +39,29 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File(
         "logs/app-.log",
         rollingInterval: RollingInterval.Day,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}");
+
+var glitchTipDsn = EnvValidator.GetOptional("GLITCHTIP_DSN");
+if (glitchTipDsn != null)
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = glitchTipDsn;
+        options.Environment = builder.Environment.EnvironmentName;
+        options.TracesSampleRate = builder.Environment.IsDevelopment() ? 1.0 : 0.2;
+    });
+
+    loggerConfiguration.WriteTo.Logger(sentryLogger => sentryLogger
+        .Filter.ByExcluding(Matching.FromSource("Serilog.AspNetCore.RequestLoggingMiddleware"))
+        .WriteTo.Sentry(options =>
+        {
+            options.InitializeSdk = false;
+            options.MinimumEventLevel = LogEventLevel.Error;
+            options.MinimumBreadcrumbLevel = LogEventLevel.Information;
+        }));
+}
+
+Log.Logger = loggerConfiguration.CreateLogger();
 
 builder.Host.UseSerilog();
 

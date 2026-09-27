@@ -36,6 +36,41 @@ services:
       retries: 5
       start_period: 5s
 
+  glitchtip-postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: glitchtip
+      POSTGRES_DB: glitchtip
+      POSTGRES_PASSWORD: ${GLITCHTIP_DB_PASSWORD:?Set GLITCHTIP_DB_PASSWORD in .env (see .env.example)}
+    volumes:
+      - glitchtip-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip -d glitchtip"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  glitchtip:
+    image: glitchtip/glitchtip:6
+    depends_on:
+      glitchtip-postgres:
+        condition: service_healthy
+    environment:
+      SERVER_ROLE: all_in_one
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD:?Set GLITCHTIP_DB_PASSWORD in .env (see .env.example)}@glitchtip-postgres:5432/glitchtip
+      VALKEY_URL: ""
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:?Set GLITCHTIP_SECRET_KEY in .env (see .env.example)}
+      GLITCHTIP_DOMAIN: http://localhost:8000
+      EMAIL_URL: consolemail://
+      DEFAULT_FROM_EMAIL: no-reply@noteapp.com
+      ENABLE_USER_REGISTRATION: "False"
+    ports:
+      - "8000:8000"
+    volumes:
+      - glitchtip-uploads:/code/uploads
+
 volumes:
   sqlserver-data:
   minio-data:
+  glitchtip-postgres-data:
+  glitchtip-uploads:

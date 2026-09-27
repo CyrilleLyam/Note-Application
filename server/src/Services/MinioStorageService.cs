@@ -1,6 +1,8 @@
 using Minio;
 using Minio.DataModel.Args;
+using Minio.Exceptions;
 using server.src.Config;
+using server.src.Exceptions;
 using server.src.Services.Interfaces;
 
 namespace server.src.Services;
@@ -71,16 +73,24 @@ public class MinioStorageService : IStorageService
     {
         var objectName = BuildObjectName(folder, fileName);
 
-        await EnsureBucketExists(cancellationToken);
+        try
+        {
+            await EnsureBucketExists(cancellationToken);
 
-        var putObjectArgs = new PutObjectArgs()
-            .WithBucket(_bucketName)
-            .WithObject(objectName)
-            .WithStreamData(stream)
-            .WithObjectSize(stream.Length)
-            .WithContentType(contentType);
+            var putObjectArgs = new PutObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(objectName)
+                .WithStreamData(stream)
+                .WithObjectSize(stream.Length)
+                .WithContentType(contentType);
 
-        await _minioClient.PutObjectAsync(putObjectArgs, cancellationToken);
+            await _minioClient.PutObjectAsync(putObjectArgs, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new StorageException("Failed to upload a file to MinIO.", objectName, ex);
+        }
+
         _logger.LogInformation("Uploaded object {Object} to MinIO bucket {Bucket}", objectName, _bucketName);
     }
 
@@ -88,10 +98,10 @@ public class MinioStorageService : IStorageService
     {
         var objectName = BuildObjectName(folder, fileName);
 
-        await EnsureBucketExists(cancellationToken);
-
         try
         {
+            await EnsureBucketExists(cancellationToken);
+
             var statArgs = new StatObjectArgs()
                 .WithBucket(_bucketName)
                 .WithObject(objectName);
@@ -109,10 +119,13 @@ public class MinioStorageService : IStorageService
             var contentType = !string.IsNullOrWhiteSpace(stat.ContentType) ? stat.ContentType : "application/octet-stream";
             return (memoryStream, contentType);
         }
-        catch (Exception ex)
+        catch (ObjectNotFoundException)
         {
-            _logger.LogWarning(ex, "Failed to retrieve object {Object} from MinIO bucket {Bucket}", objectName, _bucketName);
             return null;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new StorageException("Failed to read a file from MinIO.", objectName, ex);
         }
     }
 
@@ -120,10 +133,10 @@ public class MinioStorageService : IStorageService
     {
         var objectName = BuildObjectName(folder, fileName);
 
-        await EnsureBucketExists(cancellationToken);
-
         try
         {
+            await EnsureBucketExists(cancellationToken);
+
             var rmArgs = new RemoveObjectArgs()
                 .WithBucket(_bucketName)
                 .WithObject(objectName);
@@ -131,9 +144,13 @@ public class MinioStorageService : IStorageService
             await _minioClient.RemoveObjectAsync(rmArgs, cancellationToken);
             _logger.LogInformation("Deleted object {Object} from MinIO bucket {Bucket}", objectName, _bucketName);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "Failed to delete object {Object} from MinIO bucket {Bucket}", objectName, _bucketName);
+            _logger.LogError(
+                new StorageException("Failed to delete a file from MinIO.", objectName, ex),
+                "Failed to delete object {Object} from MinIO bucket {Bucket}",
+                objectName,
+                _bucketName);
         }
     }
 

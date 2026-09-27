@@ -1,4 +1,5 @@
 using Microsoft.IdentityModel.Tokens;
+using server.src.Exceptions;
 
 namespace server.src.Middlewares;
 
@@ -42,6 +43,7 @@ public class ExceptionMiddleware
         {
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, exception.Message),
             SecurityTokenException => (StatusCodes.Status401Unauthorized, exception.Message),
+            StorageException => (StatusCodes.Status503ServiceUnavailable, "File storage is unavailable. Please try again later."),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected internal server error occurred.")
         };
 
