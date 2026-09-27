@@ -25,10 +25,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const isConnected = ref(false)
 
   let listRequestId = 0
+  let pendingList: Promise<void> | null = null
   let isStreaming = false
   let streamController: AbortController | null = null
 
-  async function fetchNotifications() {
+  function fetchNotifications() {
+    pendingList ??= loadNotifications().finally(() => {
+      pendingList = null
+    })
+    return pendingList
+  }
+
+  async function loadNotifications() {
     const requestId = ++listRequestId
     isLoading.value = true
     error.value = null
@@ -164,6 +172,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   function reset() {
     stop()
     listRequestId++
+    pendingList = null
     notifications.value = []
     unreadCount.value = 0
     isLoading.value = false

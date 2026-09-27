@@ -11,6 +11,12 @@ defineProps<{
 const page = defineModel<number>('page', { required: true })
 
 const { t } = useI18n()
+
+function goToPage(value: number) {
+  page.value = value
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
+}
 </script>
 
 <template>
@@ -23,7 +29,7 @@ const { t } = useI18n()
         variant="outline"
         size="sm"
         :disabled="!meta.hasPreviousPage"
-        @click="page -= 1"
+        @click="goToPage(page - 1)"
       >
         <ChevronLeft class="h-4 w-4" />
         <span>{{ t('notes.pagination.previous') }}</span>
@@ -32,7 +38,7 @@ const { t } = useI18n()
         variant="outline"
         size="sm"
         :disabled="!meta.hasNextPage"
-        @click="page += 1"
+        @click="goToPage(page + 1)"
       >
         <span>{{ t('notes.pagination.next') }}</span>
         <ChevronRight class="h-4 w-4" />

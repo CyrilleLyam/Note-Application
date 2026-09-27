@@ -102,7 +102,7 @@ async function handleLogout() {
                   <img
                     v-if="user?.avatarUrl"
                     :src="user.avatarUrl"
-                    alt="Avatar"
+                    :alt="t('profile.avatarAlt')"
                     class="h-full w-full object-cover"
                   >
                   <template v-else-if="initials">{{ initials }}</template>
@@ -126,7 +126,7 @@ async function handleLogout() {
                 @select="showProfileDialog = true"
               >
                 <UserCog class="h-4 w-4" />
-                <span>Profile Settings</span>
+                <span>{{ t('nav.profileSettings') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"

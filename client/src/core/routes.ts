@@ -5,6 +5,7 @@ export const coreRoutes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/core/views/NotFoundPage.vue'),
+    meta: { titleKey: 'notFound.title' },
   },
 ]
 

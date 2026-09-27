@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { AlertCircle, Camera, Loader2, Trash2, User as UserIcon } from '@lucide/vue'
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
@@ -12,10 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/core/components/ui/dialog'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/core/components/ui/form'
 import { Input } from '@/core/components/ui/input'
 import { Label } from '@/core/components/ui/label'
 import { Textarea } from '@/core/components/ui/textarea'
 import { describeError } from '@/core/services/apiError'
+import { profileSchema } from '../models/validation'
 import { deleteUserAvatar, updateUserProfile, uploadUserAvatar } from '../services/userService'
 import { useAuthStore } from '../store/authStore'
 
@@ -25,18 +29,27 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const username = ref('')
-const displayName = ref('')
-const bio = ref('')
-const isSaving = ref(false)
 const isUploadingAvatar = ref(false)
 const errorMessage = ref<string | null>(null)
 
+const { errors, handleSubmit, isSubmitting, resetForm } = useForm({
+  validationSchema: toTypedSchema(profileSchema),
+  initialValues: {
+    username: '',
+    displayName: '',
+    bio: '',
+  },
+})
+
 watch(open, (isOpen) => {
   if (isOpen && authStore.user) {
-    username.value = authStore.user.username || ''
-    displayName.value = authStore.user.displayName || ''
-    bio.value = authStore.user.bio || ''
+    resetForm({
+      values: {
+        username: authStore.user.username ?? '',
+        displayName: authStore.user.displayName ?? '',
+        bio: authStore.user.bio ?? '',
+      },
+    })
     errorMessage.value = null
   }
 })
@@ -48,19 +61,19 @@ function triggerFileInput() {
 async function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  if (!file)
+  if (!file) {
     return
+  }
 
   errorMessage.value = null
   isUploadingAvatar.value = true
   try {
     const response = await uploadUserAvatar(file)
     authStore.setUser(response.data)
-    toast.success('Avatar updated successfully')
+    toast.success(t('profile.avatarUpdated'))
   }
   catch (err) {
     errorMessage.value = describeError(err)
-    toast.error(errorMessage.value)
   }
   finally {
     isUploadingAvatar.value = false
@@ -76,74 +89,64 @@ async function handleDeleteAvatar() {
   try {
     const response = await deleteUserAvatar()
     authStore.setUser(response.data)
-    toast.success('Avatar removed successfully')
+    toast.success(t('profile.avatarRemoved'))
   }
   catch (err) {
     errorMessage.value = describeError(err)
-    toast.error(errorMessage.value)
   }
   finally {
     isUploadingAvatar.value = false
   }
 }
 
-async function handleSave() {
+const onSubmit = handleSubmit(async (values) => {
   errorMessage.value = null
-  isSaving.value = true
   try {
-    const response = await updateUserProfile({
-      username: username.value.trim(),
-      displayName: displayName.value.trim(),
-      bio: bio.value.trim(),
-    })
+    const response = await updateUserProfile(values)
     authStore.setUser(response.data)
-    toast.success('Profile updated successfully')
+    toast.success(t('profile.updated'))
     open.value = false
   }
   catch (err) {
     errorMessage.value = describeError(err)
-    toast.error(errorMessage.value)
   }
-  finally {
-    isSaving.value = false
-  }
-}
+})
 </script>
 
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>User Profile</DialogTitle>
-        <DialogDescription>
-          Manage your account profile and avatar.
-        </DialogDescription>
+        <DialogTitle>{{ t('profile.title') }}</DialogTitle>
+        <DialogDescription>{{ t('profile.description') }}</DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4 py-2">
+      <form class="space-y-4" novalidate @submit="onSubmit">
         <div
           v-if="errorMessage"
           class="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+          role="alert"
         >
           <AlertCircle class="h-4 w-4 shrink-0" />
           <span>{{ errorMessage }}</span>
         </div>
 
-        <!-- Avatar upload section -->
         <div class="flex flex-col items-center gap-3">
-          <div class="relative group">
-            <div class="h-20 w-20 overflow-hidden rounded-full border-2 border-border bg-muted flex items-center justify-center">
+          <div class="group relative">
+            <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-muted">
               <img
                 v-if="authStore.user?.avatarUrl"
                 :src="authStore.user.avatarUrl"
-                alt="Avatar"
+                :alt="t('profile.avatarAlt')"
                 class="h-full w-full object-cover"
               >
               <UserIcon v-else class="h-10 w-10 text-muted-foreground" />
             </div>
             <button
               type="button"
-              class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white"
+              tabindex="-1"
+              aria-hidden="true"
+              class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100"
               :disabled="isUploadingAvatar"
               @click="triggerFileInput"
             >
@@ -168,16 +171,17 @@ async function handleSave() {
               :disabled="isUploadingAvatar"
               @click="triggerFileInput"
             >
-              <Loader2 v-if="isUploadingAvatar" class="mr-2 h-3.5 w-3.5 animate-spin" />
-              <Camera v-else class="mr-2 h-3.5 w-3.5" />
-              Change Photo
+              <Loader2 v-if="isUploadingAvatar" class="h-3.5 w-3.5 animate-spin" />
+              <Camera v-else class="h-3.5 w-3.5" />
+              <span>{{ t('profile.changePhoto') }}</span>
             </Button>
             <Button
               v-if="authStore.user?.avatarUrl"
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon-sm"
               class="text-destructive hover:text-destructive"
+              :aria-label="t('profile.removePhoto')"
               :disabled="isUploadingAvatar"
               @click="handleDeleteAvatar"
             >
@@ -186,40 +190,51 @@ async function handleSave() {
           </div>
         </div>
 
-        <!-- Username field -->
-        <div class="space-y-1.5">
-          <Label for="profile-username">{{ t('auth.username') }}</Label>
-          <Input id="profile-username" v-model="username" />
-        </div>
+        <FormField v-slot="{ componentField }" name="username" :validate-on-model-update="!!errors.username">
+          <FormItem>
+            <FormLabel>{{ t('auth.username') }}</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" autocomplete="username" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-        <!-- Display Name field -->
-        <div class="space-y-1.5">
-          <Label for="profile-display-name">Display Name</Label>
-          <Input id="profile-display-name" v-model="displayName" placeholder="e.g. Jane Doe" />
-        </div>
+        <FormField v-slot="{ componentField }" name="displayName" :validate-on-model-update="!!errors.displayName">
+          <FormItem>
+            <FormLabel>{{ t('profile.displayName') }}</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" autocomplete="name" :placeholder="t('profile.displayNamePlaceholder')" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-        <!-- Email field (readonly) -->
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <Label for="profile-email">{{ t('auth.email') }}</Label>
           <Input id="profile-email" :model-value="authStore.user?.email" disabled class="opacity-70" />
         </div>
 
-        <!-- Bio field -->
-        <div class="space-y-1.5">
-          <Label for="profile-bio">Bio</Label>
-          <Textarea id="profile-bio" v-model="bio" placeholder="Tell us a little about yourself" rows="3" />
-        </div>
-      </div>
+        <FormField v-slot="{ componentField }" name="bio" :validate-on-model-update="!!errors.bio">
+          <FormItem>
+            <FormLabel>{{ t('profile.bio') }}</FormLabel>
+            <FormControl>
+              <Textarea v-bind="componentField" rows="3" :placeholder="t('profile.bioPlaceholder')" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <DialogFooter class="gap-2 sm:gap-0">
-        <Button variant="outline" type="button" @click="open = false">
-          {{ t('common.cancel') }}
-        </Button>
-        <Button type="button" :disabled="isSaving" @click="handleSave">
-          <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
-          Save Changes
-        </Button>
-      </DialogFooter>
+        <DialogFooter class="gap-2">
+          <Button variant="outline" type="button" @click="open = false">
+            {{ t('common.cancel') }}
+          </Button>
+          <Button type="submit" :disabled="isSubmitting">
+            <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
+            <span>{{ t('profile.saveChanges') }}</span>
+          </Button>
+        </DialogFooter>
+      </form>
     </DialogContent>
   </Dialog>
 </template>

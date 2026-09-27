@@ -22,6 +22,7 @@ const en = {
     switchToLight: 'Switch to light mode',
     switchToDark: 'Switch to dark mode',
     language: 'Language',
+    profileSettings: 'Profile settings',
   },
   footer: {
     rights: '© {year} Notes. All rights reserved.',
@@ -60,6 +61,8 @@ const en = {
     titleMax: 'Title must be at most 200 characters',
     tagsMax: 'A note can have at most 10 tags',
     tagMax: 'Each tag must be at most 30 characters',
+    displayNameMax: 'Display name must be at most 100 characters',
+    bioMax: 'Bio must be at most 500 characters',
   },
   errors: {
     generic: 'Something went wrong. Please try again.',
@@ -226,6 +229,7 @@ const en = {
     },
   },
   sharedNote: {
+    pageTitle: 'Shared note',
     sharedBy: 'Shared by {author}',
     readOnly: 'Read-only',
     loading: 'Loading shared note',
@@ -234,6 +238,21 @@ const en = {
     loadError: 'Unable to load this note',
     createYourOwn: 'Create your own notes',
     backToNotes: 'Back to notes',
+  },
+  profile: {
+    title: 'Profile',
+    description: 'Manage your profile details and photo.',
+    changePhoto: 'Change photo',
+    removePhoto: 'Remove photo',
+    avatarAlt: 'Profile photo',
+    displayName: 'Display name',
+    displayNamePlaceholder: 'e.g. Jane Doe',
+    bio: 'Bio',
+    bioPlaceholder: 'Tell us a little about yourself',
+    saveChanges: 'Save changes',
+    avatarUpdated: 'Photo updated',
+    avatarRemoved: 'Photo removed',
+    updated: 'Profile updated',
   },
   notifications: {
     title: 'Notifications',

@@ -18,3 +18,11 @@ export const registerSchema = z.object({
 })
 
 export type RegisterInput = z.infer<typeof registerSchema>
+
+export const profileSchema = z.object({
+  username: z.string().trim().min(3, 'validation.usernameMin').max(50, 'validation.usernameMax'),
+  displayName: z.string().trim().max(100, 'validation.displayNameMax'),
+  bio: z.string().trim().max(500, 'validation.bioMax'),
+})
+
+export type ProfileInput = z.infer<typeof profileSchema>

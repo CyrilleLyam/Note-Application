@@ -24,6 +24,7 @@ const zh: MessageSchema = {
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
     language: '语言',
+    profileSettings: '个人资料设置',
   },
   footer: {
     rights: '© {year} 笔记。保留所有权利。',
@@ -62,6 +63,8 @@ const zh: MessageSchema = {
     titleMax: '标题最多包含 200 个字符',
     tagsMax: '一篇笔记最多添加 10 个标签',
     tagMax: '每个标签最多包含 30 个字符',
+    displayNameMax: '显示名称最多包含 100 个字符',
+    bioMax: '个人简介最多包含 500 个字符',
   },
   errors: {
     generic: '出现错误，请重试。',
@@ -228,6 +231,7 @@ const zh: MessageSchema = {
     },
   },
   sharedNote: {
+    pageTitle: '共享的笔记',
     sharedBy: '由 {author} 分享',
     readOnly: '只读',
     loading: '正在加载分享的笔记',
@@ -236,6 +240,21 @@ const zh: MessageSchema = {
     loadError: '无法加载此笔记',
     createYourOwn: '创建你自己的笔记',
     backToNotes: '返回笔记列表',
+  },
+  profile: {
+    title: '个人资料',
+    description: '管理你的个人资料和头像。',
+    changePhoto: '更换头像',
+    removePhoto: '删除头像',
+    avatarAlt: '头像',
+    displayName: '显示名称',
+    displayNamePlaceholder: '例如：张三',
+    bio: '个人简介',
+    bioPlaceholder: '简单介绍一下你自己',
+    saveChanges: '保存更改',
+    avatarUpdated: '头像已更新',
+    avatarRemoved: '头像已删除',
+    updated: '个人资料已更新',
   },
   notifications: {
     title: '通知',

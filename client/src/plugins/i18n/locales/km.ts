@@ -24,6 +24,7 @@ const km: MessageSchema = {
     switchToLight: 'ប្ដូរទៅផ្ទៃភ្លឺ',
     switchToDark: 'ប្ដូរទៅផ្ទៃងងឹត',
     language: 'ភាសា',
+    profileSettings: 'ការកំណត់ប្រវត្តិរូប',
   },
   footer: {
     rights: '© {year} កំណត់ត្រា។ រក្សាសិទ្ធិគ្រប់យ៉ាង។',
@@ -62,6 +63,8 @@ const km: MessageSchema = {
     titleMax: 'ចំណងជើងមិនអាចលើសពី ២០០ តួអក្សរ',
     tagsMax: 'កំណត់ត្រាមួយអាចមានស្លាកច្រើនបំផុត ១០',
     tagMax: 'ស្លាកនីមួយៗមិនអាចលើសពី ៣០ តួអក្សរ',
+    displayNameMax: 'ឈ្មោះបង្ហាញមិនអាចលើសពី ១០០ តួអក្សរ',
+    bioMax: 'ជីវប្រវត្តិមិនអាចលើសពី ៥០០ តួអក្សរ',
   },
   errors: {
     generic: 'មានបញ្ហាកើតឡើង។ សូមព្យាយាមម្ដងទៀត។',
@@ -228,6 +231,7 @@ const km: MessageSchema = {
     },
   },
   sharedNote: {
+    pageTitle: 'កំណត់ត្រាដែលបានចែករំលែក',
     sharedBy: 'ចែករំលែកដោយ {author}',
     readOnly: 'អានតែប៉ុណ្ណោះ',
     loading: 'កំពុងផ្ទុកកំណត់ត្រាដែលបានចែករំលែក',
@@ -236,6 +240,21 @@ const km: MessageSchema = {
     loadError: 'មិនអាចផ្ទុកកំណត់ត្រានេះបានទេ',
     createYourOwn: 'បង្កើតកំណត់ត្រារបស់អ្នកផ្ទាល់',
     backToNotes: 'ត្រឡប់ទៅកំណត់ត្រា',
+  },
+  profile: {
+    title: 'ប្រវត្តិរូប',
+    description: 'គ្រប់គ្រងព័ត៌មានប្រវត្តិរូប និងរូបថតរបស់អ្នក។',
+    changePhoto: 'ប្ដូររូបថត',
+    removePhoto: 'លុបរូបថត',
+    avatarAlt: 'រូបថតប្រវត្តិរូប',
+    displayName: 'ឈ្មោះបង្ហាញ',
+    displayNamePlaceholder: 'ឧ. សុខ ដារា',
+    bio: 'ជីវប្រវត្តិ',
+    bioPlaceholder: 'ប្រាប់យើងបន្តិចអំពីខ្លួនអ្នក',
+    saveChanges: 'រក្សាទុកការផ្លាស់ប្ដូរ',
+    avatarUpdated: 'បានប្ដូររូបថត',
+    avatarRemoved: 'បានលុបរូបថត',
+    updated: 'បានកែប្រែប្រវត្តិរូប',
   },
   notifications: {
     title: 'ការជូនដំណឹង',
